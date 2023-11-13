@@ -2226,10 +2226,61 @@ function! s:YRWindowUpdate()
     " Switch to the yankring buffer
     " only if it is already visible
     if bufwinnr(s:yr_buffer_id) != -1
-        call s:YRShow(0)
-        " Switch back to the original buffer
-        " This could fail, if happening from within an autocmd
-        silent! exec orig_win_bufnr . "wincmd w"
+        if has('patch-8.0.1039') || has('nvim-0.2.0')
+            " manipulate content of background
+            call s:YRContentUpdate()
+        else
+            call s:YRShow(0)
+            " Switch back to the original buffer
+            " This could fail, if happening from within an autocmd
+            silent! exec orig_win_bufnr . "wincmd w"
+        endif
+    endif
+endfunction
+
+function! s:YRContentUpdate()
+    let output = 'AutoClose='.g:yankring_window_auto_close.
+                \ ';ClipboardMonitor='.g:yankring_clipboard_monitor.
+                \ ';Inserts='.g:yankring_record_insert.
+                \ ';Cmds:<enter>,[g]p,[g]P,1-9,d,r,s,a,c,i,u,R,q,<space>;Help=?'.
+                \ (s:yr_search==""?"":';SearchRegEx='.s:yr_search) .
+                \ "\n"
+
+    let show_registers = 0
+    if a:0 > 1 && a:2 ==# 'R'
+        let show_registers = 1
+    endif
+
+
+    " List is shown in order of replacement
+    " assuming using previous yanks
+    let output = output . "--- YankRing ---\n"
+    let output = output . (show_registers == 1 ? 'Reg ' : 'Elem')."  Content\n"
+
+    if show_registers == 1
+        for reg_name in map( range(char2nr('0'), char2nr('9')) +
+                    \ (range(char2nr('a'), char2nr('z')))
+                    \, 'nr2char(v:val)'
+                    \ )
+            let output  = output . s:YRDisplayElem(reg_name, getreg(reg_name).',') . "\n"
+        endfor
+    else
+        call s:YRHistoryRead()
+        let disp_item_nr = 1
+        for elem in s:yr_history_list
+            let output  = output . s:YRDisplayElem(disp_item_nr, elem) . "\n"
+            let disp_item_nr   += 1
+        endfor
+    endif
+
+    if g:yankring_window_use_separate == 1
+        let l:yr_bufnr = bufnr(g:yankring_buffer_name)
+        silent! call setbufvar(l:yr_bufnr, '&modifiable', 1)
+        silent! call deletebufline(l:yr_bufnr, 1, '$')
+        silent! call setbufline(l:yr_bufnr, 1, split(output, '\n'))
+        silent! call setbufvar(l:yr_bufnr, '&modifiable', 0)
+    else
+        echo output
     endif
 endfunction
 
