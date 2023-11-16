@@ -2466,6 +2466,7 @@ function! s:YRWindowOpen(results)
     setlocal nonumber
     setlocal nobuflisted
     setlocal noreadonly
+    setlocal winfixwidth
     setlocal nospell
     setlocal modifiable
     if v:version >= 703
