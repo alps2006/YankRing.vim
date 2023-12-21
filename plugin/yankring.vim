@@ -1618,6 +1618,11 @@ function! s:YRPaste(replace_last_paste_selection, nextvalue, direction, ...)
             call setreg(default_register, replace_reg, replace_reg_type)
         endif
 
+        if cmd_mode == 'v'
+            " If the yankring window is open, refresh it
+            call s:YRWindowUpdate()
+        endif
+
         return
     endif
 
@@ -2981,6 +2986,7 @@ command!                  -nargs=? YRCheckClipboard call s:YRCheckClipboard(<arg
 command! -count -register -nargs=* YRYankCount      call s:YRYankCount(<args>)
 command! -range -bang     -nargs=? YRYankRange      <line1>,<line2>call s:YRYankRange(<bang>0, <args>)
 command! -count=1 -bang   -nargs=0 YRMapsMacro      call s:YRMapsMacro(<bang>0, <args>)
+command!                           YRUpdate         call s:YRWindowUpdate()
 
 " Menus
 " 0: Turns the menu off.
