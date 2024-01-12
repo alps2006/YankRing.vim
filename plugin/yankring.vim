@@ -425,20 +425,8 @@ function! s:YRShow(...)
     if toggle == 1
         if bufwinnr(s:yr_buffer_id) > -1
             " If the YankRing window is already open close it
-            exec bufwinnr(s:yr_buffer_id) . "wincmd w"
             " Quit the YankRing
             call s:YRWindowAction('q', 'n')
-
-            " Switch back to the window which the YankRing
-            " window was opened from
-            if bufwinnr(s:yr_buffer_last) != -1
-                " If the buffer is visible, switch to it
-                exec s:yr_buffer_last_winnr . "wincmd w"
-            endif
-
-            " Prevent recursion
-            let s:yankring_showing = 0
-
             return
         endif
     endif
@@ -2669,13 +2657,18 @@ function! s:YRWindowAction(op, cmd_mode) range
             let s:yr_winsize_chgd = 0
         endif
 
-        " Hide the YankRing window
-        hide
-
+        " Switch back to the window which the YankRing
+        " window was opened from
         if bufwinnr(s:yr_buffer_last) != -1
             " If the buffer is visible, switch to it
             exec s:yr_buffer_last_winnr . "wincmd w"
         endif
+
+        " Hide the YankRing window
+        exec bufwinnr(s:yr_buffer_id) . 'hide'
+
+        " Prevent recursion
+        let s:yankring_showing = 0
 
         return
     elseif opcode ==# 's'
