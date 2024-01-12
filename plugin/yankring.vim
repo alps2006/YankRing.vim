@@ -417,11 +417,6 @@ function! s:YRShow(...)
         let toggle = matchstr(a:1, '\d\+')
     endif
 
-    let show_registers = 0
-    if a:0 > 1 && a:2 ==# 'R'
-        let show_registers = 1
-    endif
-
     if toggle == 1
         if bufwinnr(s:yr_buffer_id) > -1
             " If the YankRing window is already open close it
@@ -465,9 +460,9 @@ function! s:YRShow(...)
     " List is shown in order of replacement
     " assuming using previous yanks
     let output = "--- YankRing ---\n"
-    let output = output . (show_registers == 1 ? 'Reg ' : 'Elem')."  Content\n"
+    let output = output . (s:yr_show_registers == 1 ? 'Reg ' : 'Elem')."  Content\n"
 
-    if show_registers == 1
+    if s:yr_show_registers == 1
         for reg_name in map( range(char2nr('0'), char2nr('9')) +
                     \ (range(char2nr('a'), char2nr('z')))
                     \, 'nr2char(v:val)'
@@ -778,6 +773,7 @@ function! s:YRInit(...)
     let s:yr_prev_vis_cend         = 0
     let s:yr_prev_changenr         = 0
     let s:yr_prev_repeating        = 0
+    let s:yr_show_registers        = 0
 
     " This is used to determine if the visual selection should be
     " reset prior to issuing the YRReplace
@@ -2239,18 +2235,12 @@ function! s:YRContentUpdate()
                 \ (s:yr_search==""?"":';SearchRegEx='.s:yr_search) .
                 \ "\n"
 
-    let show_registers = 0
-    if a:0 > 1 && a:2 ==# 'R'
-        let show_registers = 1
-    endif
-
-
     " List is shown in order of replacement
     " assuming using previous yanks
     let output = output . "--- YankRing ---\n"
-    let output = output . (show_registers == 1 ? 'Reg ' : 'Elem')."  Content\n"
+    let output = output . (s:yr_show_registers == 1 ? 'Reg ' : 'Elem')."  Content\n"
 
-    if show_registers == 1
+    if s:yr_show_registers == 1
         for reg_name in map( range(char2nr('0'), char2nr('9')) +
                     \ (range(char2nr('a'), char2nr('z')))
                     \, 'nr2char(v:val)'
@@ -2681,13 +2671,15 @@ function! s:YRWindowAction(op, cmd_mode) range
         " Switch back to the original buffer
         exec s:yr_buffer_last_winnr . "wincmd w"
 
+        let s:yr_show_registers = 0
         call s:YRShow(0)
         return
     elseif opcode ==# 'R'
         " Switch back to the original buffer
         exec s:yr_buffer_last_winnr . "wincmd w"
 
-        call s:YRShow(0, 'R')
+        let s:yr_show_registers = 1
+        call s:YRShow(0)
         return
     elseif opcode ==# 'a'
         let l:curr_line = line(".")
